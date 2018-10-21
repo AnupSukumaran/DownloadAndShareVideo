@@ -7,11 +7,15 @@
 //
 
 import UIKit
+import AVKit
 
 class ViewController: UIViewController {
     
     
     @IBOutlet weak var btnShareVideo: UIButton!
+    
+     let videoPlayer = AVPlayerViewController()
+     let playerLayer = AVPlayerLayer()
     
     var progress: Float = 0.0
     var task: URLSessionTask!
@@ -27,8 +31,20 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        setNotificWhenVideoEnds()
     }
+    
+    //MARK: SET Notification When VIDEO ENDS
+    func setNotificWhenVideoEnds() {
+        NotificationCenter.default.addObserver(self, selector:#selector(self.playerDidFinishPlaying(note:)),name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: nil)
+    }
+    
+    @objc func playerDidFinishPlaying(note: NSNotification){
+        print("dataEnded")
+        //dismiss(animated: true, completion: nil)
+         self.playerLayer.removeFromSuperlayer()
+    }
+    
     
     @IBAction func shareVideoAction(_ sender: Any) {
         
@@ -45,7 +61,9 @@ class ViewController: UIViewController {
             }
         }
         
-        let videoPath = "http://159.65.154.78:8002/storage/whatsapp-status/video/2018/07/26/Zd1XMyCZIpd3XHREyWFOou9ig98IzcJKxEYR8fzd.mp4"
+        //http://159.65.154.78:8002/storage/whatsapp-status/video/2018/07/26/Zd1XMyCZIpd3XHREyWFOou9ig98IzcJKxEYR8fzd.mp4
+        //http://www.exit109.com/~dnn/clips/RW20seconds_1.mp4
+        let videoPath = "http://www.exit109.com/~dnn/clips/RW20seconds_1.mp4"
         
         let s = videoPath
         let url = NSURL(string:s)!
@@ -64,6 +82,39 @@ class ViewController: UIViewController {
                 MBProgressHUD(for: self.view)?.progress = self.progress
             }
             usleep(50000)
+        }
+    }
+    //MARK: VIDEO LAYER
+    func callPayerAsALayer(url: URL) {
+       // let videoURL = URL(string: "https://www.electronicvillage.org/evquizapp/upload/questions/12.mp4")
+        let player = AVPlayer(url: url)
+        
+        //let playerLayer = AVPlayerLayer(player: player)
+        playerLayer.player = player
+        playerLayer.frame = self.view.bounds
+        
+        self.view.layer.addSublayer(playerLayer)
+        
+        playerLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
+//        self.view.layer.insertSublayer(playerLayer, at: 0)
+//        player.seek(to: CMTime.zero)
+        player.play()
+    }
+    
+    //MARK: As Separate Player
+    func asSeperatePlayer(url: URL) {
+        //"http://jplayer.org/video/m4v/Big_Buck_Bunny_Trailer.m4v"
+        let video = AVPlayer(url: url)
+        //
+        videoPlayer.player = video
+        videoPlayer.showsPlaybackControls = false
+        videoPlayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
+        present(videoPlayer, animated: true) {
+            print("Playing...")
+       
+            video.play()
+            video.accessibilityElementsHidden = true
+            
         }
     }
     
@@ -105,6 +156,11 @@ extension ViewController: URLSessionDownloadDelegate {
         print("docDirectoryURL = \(docDirectoryURL)😄")
         
         // Get the original file name from the original request.
+        guard let originalURL = downloadTask.originalRequest?.url else {print("originalURL😩");return}
+        print("originalURL = \(originalURL)")
+       //
+       
+        
         let destinationFilename = downloadTask.originalRequest?.url?.lastPathComponent
         print("destinationFilename = \(destinationFilename!)😄")
         
@@ -133,8 +189,9 @@ extension ViewController: URLSessionDownloadDelegate {
         DispatchQueue.main.async {
             MBProgressHUD.hide(for: self.view, animated: true)
         }
-        
-        activityAlertView(destinationURL: destinationURL!)
+         callPayerAsALayer(url: destinationURL!)
+        // asSeperatePlayer(url: destinationURL!)
+       // activityAlertView(destinationURL: destinationURL!)
         
     }
     
